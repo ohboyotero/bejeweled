@@ -30,7 +30,14 @@ public class Board : MonoBehaviour {
         Vector3 position = upperLeft;
         position.x += column * spacing + (spacing / 2);
         position.y -= row * spacing + (spacing / 2);
-        gems[row, column] = (Gem)Instantiate(gemPrefab, position, Quaternion.identity);
+
+        Gem newGem = (Gem)Instantiate(gemPrefab, position, Quaternion.identity);
+        int typeIndex = Random.Range(0, 6);
+        newGem.type = (Gem.Type)typeIndex;
+        SpriteRenderer gemRenderer = newGem.GetComponent<SpriteRenderer>();
+        gemRenderer.sprite = gemSprites[typeIndex];
+
+        gems[row, column] = newGem;
       }
     }
   }
