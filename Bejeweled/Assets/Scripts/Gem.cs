@@ -13,6 +13,7 @@ public class Gem : MonoBehaviour {
   }
 
   public Type type;
+  public InputCoordinator inputCoordinator;
 
   // Use this for initialization
   void Start() {
@@ -22,5 +23,9 @@ public class Gem : MonoBehaviour {
   // Update is called once per frame
   void Update() {
   
+  }
+
+  void OnMouseDown() {
+    inputCoordinator.NotifyClick(this);
   }
 }
