@@ -157,6 +157,10 @@ public class Board : MonoBehaviour, InputCoordinator {
 
     return matchFound;
   }
+
+  private void RefillBoard() {
+
+  }
     
   private bool ShouldAcceptInput() {
     return tweens.Count == 0;
