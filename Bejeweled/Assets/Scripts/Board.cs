@@ -71,7 +71,11 @@ public class Board : MonoBehaviour, InputCoordinator {
 
     Debug.LogError("Couldn't find gem corresponding to click.");
   }
-
+  
+  private bool ShouldAcceptInput() {
+    return tweens.Count == 0;
+  }
+    
   private void AttemptSwap(int firstX, int firstY, int secondX, int secondY) {
     if (Mathf.Abs(firstX + firstY - secondX - secondY) == 1) {
       Gem first = gems[firstX, firstY];
@@ -91,7 +95,8 @@ public class Board : MonoBehaviour, InputCoordinator {
 
     // First pass to find all the matches and add to a set of locations to be removed.
     HashSet<Point> pointsToRemove = new HashSet<Point>();
-    matchFound = CheckColumnMatches(pointsToRemove) || CheckRowMatches(pointsToRemove);
+    matchFound = CheckColumnMatches(pointsToRemove);
+    matchFound |= CheckRowMatches(pointsToRemove);
 
     // Second pass actually removes the affected gems.
     foreach (Point point in pointsToRemove) {
@@ -159,11 +164,38 @@ public class Board : MonoBehaviour, InputCoordinator {
   }
 
   private void RefillBoard() {
-
+    // Go up through each column, find holes, apply tweens to gems that need to drop, and generate
+    // new gems to come in from above.
+    for (int x = 0; x < gems.GetLength(0); ++x) {
+      int holes = 0;
+      Vector3 drop = new Vector3();
+      for (int y = gems.GetLength(1) - 1; y >= 0; --y) {
+        Gem gem = gems[x, y];
+        if (gem == null) {
+          ++holes;
+          drop.y += spacing;
+        } else if (holes > 0) {
+          tweens.Add(new Tween(gem.transform, gem.transform.position - drop, MOVE_SPEED));
+          gems[x, y + holes] = gem;
+          gems[x, y] = null;
+        }
+      }
+      
+      // Now generate new gems to fill the holes.
+      for (int y = holes - 1; y >= 0; --y) {
+        // CreateNewGem() puts the gem in its final position. We move it up off the screen
+        // and tween it back in.
+        Gem newGem = CreateNewGem(GetRandomGemType(), x, y, transform.position);
+        Vector3 finalPosition = newGem.transform.position;
+        newGem.transform.position = finalPosition + drop;
+        tweens.Add(new Tween(newGem.transform, finalPosition, MOVE_SPEED));
+      }
+    }
   }
-    
-  private bool ShouldAcceptInput() {
-    return tweens.Count == 0;
+
+  private static Gem.Type GetRandomGemType() {
+    int typeIndex = UnityEngine.Random.Range(0, Enum.GetNames(typeof(Gem.Type)).Length - 1);
+    return (Gem.Type)typeIndex;
   }
 
   private void FillRandomAssShit() {
@@ -172,23 +204,27 @@ public class Board : MonoBehaviour, InputCoordinator {
     List<Gem.Type> possibleTypes = new List<Gem.Type>();
     for (int x = 0; x < columns; ++x) {
       for (int y = 0; y < rows; ++y) {
-        Vector3 position = upperLeft;
-        position.x += x * spacing + (spacing / 2);
-        position.y -= y * spacing + (spacing / 2);
-
-        Gem newGem = (Gem)Instantiate(gemPrefab, position, Quaternion.identity);
-        newGem.inputCoordinator = this;
-
         PopulatePossibleTypes(x, y, possibleTypes);
         int typeIndex = UnityEngine.Random.Range(0, possibleTypes.Count - 1);
-        newGem.type = possibleTypes[typeIndex];
-        SpriteRenderer gemRenderer = newGem.GetComponent<SpriteRenderer>();
-        gemRenderer.sprite = gemSprites[(int)newGem.type];
-
-        gems[x, y] = newGem;
+        CreateNewGem(possibleTypes[typeIndex], x, y, upperLeft);
         possibleTypes.Clear();
       }
     }
+  }
+
+  private Gem CreateNewGem(Gem.Type type, int x, int y, Vector3 upperLeft) {
+    Vector3 position = upperLeft;
+    position.x += x * spacing + (spacing / 2);
+    position.y -= y * spacing + (spacing / 2);
+
+    Gem gem = (Gem)Instantiate(gemPrefab, position, Quaternion.identity);
+    gem.inputCoordinator = this;
+    gem.type = type;
+    SpriteRenderer gemRenderer = gem.GetComponent<SpriteRenderer>();
+    gemRenderer.sprite = gemSprites[(int)type];
+
+    gems[x, y] = gem;
+    return gem;
   }
 
   private void PopulatePossibleTypes(int x, int y, List<Gem.Type> possibleTypes) {
