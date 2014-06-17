@@ -5,30 +5,48 @@ using System;
 
 public class Board : MonoBehaviour, InputCoordinator {
 
+  // The gem prefab that should be instantiated for new gems.
   public Gem gemPrefab;
 
+  // The sprites to be used for each type of gem, indexed by gem type enum.
   public Sprite[] gemSprites;
 
+  // The number of rows of gems in the board.
   public int rows;
 
+  // The number of columns of gems in the board.
   public int columns;
 
+  // The game's timer object.
+  public Timer timer;
+
+  // Spacing between gems, in pixels.
   private float spacing;
 
+  // The gems that make up the board.
   private Gem[,] gems;
 
+  // The first click of a gem swap interaction.
   private Point firstClick;
 
+  // All active gem tweens currently in progress.
   private HashSet<Tween> tweens;
+
+  // Whether or not play is currently active.
+  private bool boardActive;
 
   private const float MOVE_SPEED = 3f;
 
   void Start() {
+    boardActive = true;
     gems = new Gem[rows, columns];
     spacing = -transform.position.x / 4;
     tweens = new HashSet<Tween>();
     firstClick = null;
     FillRandomAssShit();
+
+    timer.Expired += HandleTimerExpired;
+    timer.TimerStart();
   }
 
   void Update() {
@@ -71,9 +89,15 @@ public class Board : MonoBehaviour, InputCoordinator {
 
     Debug.LogError("Couldn't find gem corresponding to click.");
   }
+
+  private void HandleTimerExpired(float secondsRemaining) {
+    boardActive = false;
+
+    // TODO: handle game over.
+  }
   
   private bool ShouldAcceptInput() {
-    return tweens.Count == 0;
+    return tweens.Count == 0 && boardActive;
   }
     
   private void AttemptSwap(int firstX, int firstY, int secondX, int secondY) {
