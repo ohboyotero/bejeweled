@@ -1,10 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Scorer {
+public class Scorer : MonoBehaviour {
 
   // The base score received for each gem cleared.
-  private const int BASE_SCORE_PER_GEM = 100;
+  public int baseScore = 100;
+
+  // The player's starting multiplier.
+  public int startingMultiplier = 1;
 
   // Current player score.
   private int score;
@@ -20,16 +23,24 @@ public class Scorer {
     get { return multiplier; }
   }
 
-  public Scorer() {
+  void Start() {
     score = 0;
-    multiplier = 1;
+    multiplier = startingMultiplier;
+  }
+
+  void Update() {
+    guiText.text = FormatScore(score);
   }
 
   public void AddCombo(int numGems) {
-    score += (numGems * BASE_SCORE_PER_GEM) * multiplier;
+    score += (numGems * baseScore) * multiplier;
   }
 
   public void IncrementMultiplier() {
     ++multiplier;
+  }
+
+  private string FormatScore(int score) {
+    return string.Format("{0:N0}", score);
   }
 }

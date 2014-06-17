@@ -20,6 +20,9 @@ public class Board : MonoBehaviour, InputCoordinator {
   // The game's timer object.
   public Timer timer;
 
+  // The game's scorer object.
+  public Scorer scorer;
+
   // Spacing between gems, in pixels.
   private float spacing;
 
@@ -121,6 +124,9 @@ public class Board : MonoBehaviour, InputCoordinator {
     HashSet<Point> pointsToRemove = new HashSet<Point>();
     matchFound = CheckColumnMatches(pointsToRemove);
     matchFound |= CheckRowMatches(pointsToRemove);
+
+    // Update score.
+    scorer.AddCombo(pointsToRemove.Count);
 
     // Second pass actually removes the affected gems.
     foreach (Point point in pointsToRemove) {

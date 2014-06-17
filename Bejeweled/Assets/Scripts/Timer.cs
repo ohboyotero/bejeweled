@@ -6,7 +6,7 @@ public class Timer : MonoBehaviour {
   // TODO: do all of this with animation states/transitions.
 
   // The amount of time on the clock when this timer starts.
-  public float startingTime;
+  public float startingTime = 61;
 
   // When the timer runs out, it will fire the Expired event.
   public delegate void TimerEvent(float secondsRemaining);
