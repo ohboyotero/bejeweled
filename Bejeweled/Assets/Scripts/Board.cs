@@ -121,7 +121,6 @@ public class Board : MonoBehaviour, InputCoordinator {
 
       // We only actually update game state if it's a valid move.
       if (IsValidSwap(firstX, firstY, secondX, secondY)) {
-        Debug.Log("Swapped!");
         gems[secondX, secondY] = first;
         gems[firstX, firstY] = second;
         tweens.Add(firstTween);
@@ -129,7 +128,6 @@ public class Board : MonoBehaviour, InputCoordinator {
       } else {
         // If it's not a valid move, add more tweens to undo the initial tweens once they've
         // completed.
-        Debug.Log("adding on finished anti-tweens");
         MultiTween roundTripTween = new MultiTween();
         roundTripTween.AddTween(firstTween);
         roundTripTween.AddTween(firstTween.Reverse());

@@ -27,8 +27,11 @@ public class Timer : MonoBehaviour {
     secondsRemaining = startingTime;
   }
 
-  void Start() {
+  void Awake() {
     Reset();
+  }
+
+  void Start() {
   }
 	
   void Update() {
