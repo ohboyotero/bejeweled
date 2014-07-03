@@ -1,33 +1,23 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
-public class Tween {
-  private Transform target;
-  private Vector3 finish;
-  private Vector3 direction;
-  private float speed;
+public abstract class Tween {
+  public delegate void TweenEvent(Tween tween);
+  public event TweenEvent OnFinish;
 
-  public bool Finished {
-    get { return target.position == finish; }
+  public abstract bool Finished {
+    get;
   }
 
-  public Tween(Transform target, Vector3 finish, float speed) {
-    this.target = target;
-    this.finish = finish;
-    this.speed = speed;
-    this.direction = (finish - target.position).normalized;
-  }
+  public abstract void Update();
 
-  public void Update() {
-    if (Finished) {
-      return;
-    }
+  public abstract Tween Reverse();
 
-    float distanceThisFrame = speed * Time.deltaTime;
-    if ((finish - target.position).magnitude < distanceThisFrame) {
-      target.position = finish;
-    } else {
-      target.position += direction * distanceThisFrame;
+  // To be invoked by subclasses since they don't have direct access to the delegate.
+  protected void Finish(Tween tween) {
+    if (OnFinish != null) {
+      OnFinish(tween);
     }
   }
 }

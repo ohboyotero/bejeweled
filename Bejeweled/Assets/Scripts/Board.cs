@@ -33,12 +33,14 @@ public class Board : MonoBehaviour, InputCoordinator {
   private Point firstClick;
 
   // All active gem tweens currently in progress.
+  //
+  // DO NOT ADD DIRECTLY TO THIS SET. Use the private method AddTween() instead.
   private HashSet<Tween> tweens;
 
   // Whether or not play is currently active.
   private bool boardActive;
 
-  private const float MOVE_SPEED = 3f;
+  private const float MOVE_SPEED = 4f;
 
   void Start() {
     boardActive = true;
@@ -104,17 +106,101 @@ public class Board : MonoBehaviour, InputCoordinator {
   }
     
   private void AttemptSwap(int firstX, int firstY, int secondX, int secondY) {
+    // If the two click locations are neighbors (total manhattan distance is exactly one),
+    // attempt the swap.
     if (Mathf.Abs(firstX + firstY - secondX - secondY) == 1) {
       Gem first = gems[firstX, firstY];
       Gem second = gems[secondX, secondY];
-      gems[secondX, secondY] = first;
-      gems[firstX, firstY] = second;
 
-      tweens.Add(new Tween(first.transform, second.transform.position, MOVE_SPEED));
-      tweens.Add(new Tween(second.transform, first.transform.position, MOVE_SPEED));
+      // No matter what, we want to tween the attempt so the UX is responsive. In other words,
+      // even for a failed swap attempt, the gem should move to the user-desired position (though
+      // we'll just move it right back to indicate you can't do that).
+
+      Tween firstTween = new LinearTween(first.transform, second.transform.position, MOVE_SPEED);
+      Tween secondTween = new LinearTween(second.transform, first.transform.position, MOVE_SPEED);
+
+      // We only actually update game state if it's a valid move.
+      if (IsValidSwap(firstX, firstY, secondX, secondY)) {
+        Debug.Log("Swapped!");
+        gems[secondX, secondY] = first;
+        gems[firstX, firstY] = second;
+        tweens.Add(firstTween);
+        tweens.Add(secondTween);
+      } else {
+        // If it's not a valid move, add more tweens to undo the initial tweens once they've
+        // completed.
+        Debug.Log("adding on finished anti-tweens");
+        MultiTween roundTripTween = new MultiTween();
+        roundTripTween.AddTween(firstTween);
+        roundTripTween.AddTween(firstTween.Reverse());
+        tweens.Add(roundTripTween);
+
+        roundTripTween = new MultiTween();
+        roundTripTween.AddTween(secondTween);
+        roundTripTween.AddTween(secondTween.Reverse());
+        tweens.Add(roundTripTween);
+      }
     }
 
     firstClick = null;
+  }
+
+  // Returns true if swapping the first and second gems results in a valid move. This method
+  // assumes that the current game state in gems[] does NOT reflect this hypothetical swap.
+  private bool IsValidSwap(int firstX, int firstY, int secondX, int secondY) {
+    // Here we rely on knowledge of what was swapped. We only need to check for combos around the
+    // two gems that moved. Swap the gems at check to either side.
+    Gem first = gems[firstX, firstY];
+    Gem second = gems[secondX, secondY];
+    gems[secondX, secondY] = first;
+    gems[firstX, firstY] = second;
+
+    // Check the row and column of one gem.
+    bool isValid = CheckSwappedGem(firstX, firstY);
+    if (!isValid) {
+      isValid = CheckSwappedGem(secondX, secondY);
+    }
+
+    // Undo the hypothetical swap.
+    gems[firstX, firstY] = first;
+    gems[secondX, secondY] = second;
+
+    return isValid;
+  }
+
+  private bool CheckSwappedGem(int x, int y) {
+    int numSameType = 1;
+    Gem.Type type = gems[x, y].type;
+
+    // First check before and after the gem in the row.
+    for (int i = -1; i > -3; --i) {
+      if (i + x < 0 || gems[x + i, y].type != type) {
+        break;
+      }
+      ++numSameType;
+    }
+    for (int i = 1; i < 3; ++i) {
+      if (i + x >= columns || gems[x + i, y].type != type) {
+        break;
+      }
+      ++numSameType;
+    }
+
+    // Then check before and after the gem in the row.
+    for (int i = -1; i > -3; --i) {
+      if (i + y < 0 || gems[x, y + i].type != type) {
+        break;
+      }
+      ++numSameType;
+    }
+    for (int i = 1; i < 3; ++i) {
+      if (i + y >= rows || gems[x, y + i].type != type) {
+        break;
+      }
+      ++numSameType;
+    }
+
+    return numSameType >= 3;
   }
 
   private bool HandleMatches() {
@@ -205,7 +291,7 @@ public class Board : MonoBehaviour, InputCoordinator {
           ++holes;
           drop.y += spacing;
         } else if (holes > 0) {
-          tweens.Add(new Tween(gem.transform, gem.transform.position - drop, MOVE_SPEED));
+          tweens.Add(new LinearTween(gem.transform, gem.transform.position - drop, MOVE_SPEED));
           gems[x, y + holes] = gem;
           gems[x, y] = null;
         }
@@ -218,7 +304,7 @@ public class Board : MonoBehaviour, InputCoordinator {
         Gem newGem = CreateNewGem(GetRandomGemType(), x, y, transform.position);
         Vector3 finalPosition = newGem.transform.position;
         newGem.transform.position = finalPosition + drop;
-        tweens.Add(new Tween(newGem.transform, finalPosition, MOVE_SPEED));
+        tweens.Add(new LinearTween(newGem.transform, finalPosition, MOVE_SPEED));
       }
     }
   }
