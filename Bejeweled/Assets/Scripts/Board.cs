@@ -26,7 +26,8 @@ public class Board : MonoBehaviour, InputCoordinator {
   // Spacing between gems, in pixels.
   private float spacing;
 
-  // The gems that make up the board.
+  // The gems that make up the board. (0,0) represents the top-left corner of the board. Y increases
+  // downwards, and X increases to the right.
   private Gem[,] gems;
 
   // The first click of a gem swap interaction.
@@ -73,26 +74,50 @@ public class Board : MonoBehaviour, InputCoordinator {
     }
   }
 
-  public void NotifyClick(Gem target) {
+  public void NotifyDrag(Gem target, Point direction) {
     if (!ShouldAcceptInput()) {
-      Debug.Log("Ignoring input because we have active tweens.");
+      Debug.Log("Ignoring drag because we have active tweens.");
       return;
     }
 
+    Point gemCoord = FindGem(target);
+    if (gemCoord != null) {
+      AttemptSwap(gemCoord.x, gemCoord.y, gemCoord.x + direction.x, gemCoord.y + direction.y);
+    } else {
+      Debug.LogError("Couldn't find gem corresponding to drag.");
+    }
+  }
+
+  public void NotifyClick(Gem target) {
+    if (!ShouldAcceptInput()) {
+      Debug.Log("Ignoring click because we have active tweens.");
+      return;
+    }
+
+    Point gemCoord = FindGem(target);
+    if (gemCoord != null) {
+      if (firstClick == null) {
+        firstClick = gemCoord;
+      } else {
+        AttemptSwap(firstClick.x, firstClick.y, gemCoord.x, gemCoord.y);
+      }
+    } else {
+      Debug.LogError("Couldn't find gem corresponding to click.");
+    }
+  }
+
+  // Given a gem object, returns the coordinate in the gem grid at which it resides or null if it
+  // was not found on the board.
+  private Point FindGem(Gem target) {
     for (int i = 0; i < gems.GetLength(0); ++i) {
       for (int j = 0; j < gems.GetLength(1); ++j) {
         if (gems[i, j] == target) {
-          if (firstClick == null) {
-            firstClick = new Point(i, j);
-          } else {
-            AttemptSwap(firstClick.x, firstClick.y, i, j);
-          }
-          return;
+          return new Point(i, j);
         }
       }
     }
 
-    Debug.LogError("Couldn't find gem corresponding to click.");
+    return null;
   }
 
   private void HandleTimerExpired(float secondsRemaining) {
@@ -106,6 +131,12 @@ public class Board : MonoBehaviour, InputCoordinator {
   }
     
   private void AttemptSwap(int firstX, int firstY, int secondX, int secondY) {
+    // If one of the coords is not on the grid, fail fast.
+    if (firstX < 0 || firstX >= columns || secondX < 0 || secondX >= columns ||
+      firstY < 0 || firstY >= rows || secondY < 0 || secondY >= rows) {
+      return;
+    }
+
     // If the two click locations are neighbors (total manhattan distance is exactly one),
     // attempt the swap.
     if (Mathf.Abs(firstX + firstY - secondX - secondY) == 1) {
@@ -184,7 +215,12 @@ public class Board : MonoBehaviour, InputCoordinator {
       ++numSameType;
     }
 
+    if (numSameType >= 3) {
+      return true;
+    }
+
     // Then check before and after the gem in the row.
+    numSameType = 1;
     for (int i = -1; i > -3; --i) {
       if (i + y < 0 || gems[x, y + i].type != type) {
         break;
