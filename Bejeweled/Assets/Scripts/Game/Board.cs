@@ -123,7 +123,9 @@ public class Board : MonoBehaviour, InputCoordinator {
   private void HandleTimerExpired(float secondsRemaining) {
     boardActive = false;
 
-    // TODO: handle game over.
+    scorer.GameOver();
+
+    // TODO: Finish handling end of game.
   }
   
   private bool ShouldAcceptInput() {

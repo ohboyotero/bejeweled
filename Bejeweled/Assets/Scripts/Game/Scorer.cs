@@ -17,8 +17,18 @@ public class Scorer : MonoBehaviour {
   // Current player multiplier.
   private int multiplier;
 
+  // The player's high score as of the start of the game.
+  private int originalHighScore;
+
+  // The player's high score.
+  private int highScore;
+
   public int Score {
     get { return score; }
+  }
+
+  public int HighScore {
+    get { return highScore; }
   }
 
   public int Multiplier {
@@ -26,6 +36,9 @@ public class Scorer : MonoBehaviour {
   }
 
   void Start() {
+    originalHighScore = PlayerPrefs.HasKey(HIGH_SCORE_KEY) ?
+      PlayerPrefs.GetInt(HIGH_SCORE_KEY) : 0;
+    highScore = originalHighScore;
     score = 0;
     multiplier = startingMultiplier;
   }
@@ -36,10 +49,22 @@ public class Scorer : MonoBehaviour {
 
   public void AddCombo(int numGems) {
     score += (numGems * baseScore) * multiplier;
+
+    if (score > highScore) {
+      highScore = score;
+    }
   }
 
   public void IncrementMultiplier() {
     ++multiplier;
+  }
+
+  // Should be called at the end of the game.
+  public void GameOver() {
+    // If we have a new high score, save it.
+    if (originalHighScore != highScore) {
+      PlayerPrefs.SetInt(HIGH_SCORE_KEY, highScore);
+    }
   }
 
   private string FormatScore(int score) {
