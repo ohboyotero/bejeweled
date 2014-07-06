@@ -3,6 +3,8 @@ using System.Collections;
 
 public class Scorer : MonoBehaviour {
 
+  public const string HIGH_SCORE_KEY = "player-high-score";
+
   // The base score received for each gem cleared.
   public int baseScore = 100;
 
