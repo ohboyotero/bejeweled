@@ -2,6 +2,7 @@
 using System.Collections;
 
 [RequireComponent(typeof(SpriteRenderer))]
+[RequireComponent(typeof(BoxCollider2D))]
 public class ButtonRollover : MonoBehaviour {
 
   public Sprite upSprite;
@@ -19,13 +20,11 @@ public class ButtonRollover : MonoBehaviour {
   }
 	
   void OnMouseDown() {
-    Debug.Log("Down");
     down = true;
     spriteRenderer.sprite = downSprite;
   }
 
   void OnMouseUp() {
-    Debug.Log("Up");
     down = false;
     if (hover) {
       spriteRenderer.sprite = hoverSprite;
@@ -35,7 +34,6 @@ public class ButtonRollover : MonoBehaviour {
   }
 
   void OnMouseEnter() {
-    Debug.Log("Enter");
     hover = true;
     if (!down) {
       spriteRenderer.sprite = hoverSprite;
@@ -43,7 +41,6 @@ public class ButtonRollover : MonoBehaviour {
   }
 
   void OnMouseExit() {
-    Debug.Log("Exit");
     hover = false;
     spriteRenderer.sprite = upSprite;
   }
